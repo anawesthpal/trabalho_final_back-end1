@@ -11,7 +11,6 @@ app.get('/', (request, response) => {
 
 const listaUsuarios = []
 
-// TESTADO E OK
 app.post('/usuarios', (request, response) => {
     const dados = request.body
 
@@ -60,7 +59,7 @@ const novoUsuario = {
 
 });
 
-// TESTADO E OK
+
 app.post('/login', (request, response) =>{
     const dadosdoUsuario = request.body
 
@@ -68,6 +67,13 @@ app.post('/login', (request, response) =>{
     const senhaCorreta = listaUsuarios.some((user) => user.senha === dadosdoUsuario.senha)
 
     if(!emailCorreto || !senhaCorreta) {
+        return response.status(400).json({
+            sucesso: false,
+            mensagem: 'Não encontramos o seu cadastro. Volte um casa!!' 
+        })
+    }
+
+    if(!dadosdoUsuario.email || !dadosdoUsuario.senha) {
         return response.status(400).json({
             sucesso: false,
             mensagem: 'Opss, e-mail ou senha incorretos!!' 
@@ -89,26 +95,25 @@ app.post('/login', (request, response) =>{
 
 const listaRecados = []
 
-// CRIAR RECADOS
 app.post('/recados', (request, response) => {
-    const recado = request.body
+    const dados = request.body
     
-const posicao = listaUsuarios.findIndex(user => user.logado === true)
+    const usuarioLogado = listaUsuarios.findIndex(user => user.logado === true)
     
-    if (posicao == -1) {
-        return response(400).json ({
+    if (usuarioLogado === -1 || !listaUsuarios[usuarioLogado]) {
+        return response.status(400).json ({
             sucesso: false,
-            mensagem: 'Ops, não encontramos o usuário ou não está logado!'
+            mensagem: 'Quer criar um post? Criar um conta ou faça login!!'
         })
     }
 
-    if (!recado.titulo) {
+    if (!dados.titulo) {
         return response.status(400).json({
             sucesso: false,
             mensagem: 'Parece que você esqueceu o título.'
         })
     }
-    if (!recado.descricao) {
+    if (!dados.descricao) {
         return response.status(400).json({
             sucesso: false,
             mensagem: 'Parece que você esqueceu a descrição.'
@@ -117,49 +122,51 @@ const posicao = listaUsuarios.findIndex(user => user.logado === true)
     
     const novoRecado = {
         id: new Date().getTime(),
-        titulo: recado.titulo,
-        descricao: recado.descricao,
+        titulo: dados.titulo,
+        descricao: dados.descricao,
     }
     
-    listaUsuarios[posicao].recados.push(novoRecado)
+    listaUsuarios[usuarioLogado].recados.push(novoRecado)
 
-    console.log(novoRecado)
-    
-    return response.status(200).json({
+    return response.status(201).json({
         sucesso: true,
         dado: novoRecado,
         mensagem: 'Feito! Recado criado com sucesso!' 
     })
 }) 
 
-
-
 app.get('/recados', (request, response) =>{
     const usuarioLogado = listaUsuarios.findIndex(user => user.logado === true)
-    const recados = listaUsuarios[usuarioLogado].recados
     
-    console.log(recados)
-    if (recados){
-        return response.json(recados)
-    } else {
-
-        return response.status(400).json({
+    if (usuarioLogado === -1 || !listaUsuarios[usuarioLogado]) {
+        return response.status(400).json ({
             sucesso: false,
-            mensagem: 'ops! Nenhum recados encontrado!.'
+            mensagem: 'Quer ver a lista de recados? Faça login!'
         })
     }
-})
+    const recados = listaUsuarios[usuarioLogado].recados
+    
+        return response.status(200).json({
+            sucesso: true,
+            dado: recados,
+            mensagem: 'Esses foram os recados encontrados'
+        })
+    }
 
+)
 
 app.put('/recados/:id', (request, response) => {
-    console.log('put /recados')
-
     const usuarioLogado = listaUsuarios.findIndex(user => user.logado === true)
-    console.log('usuarioLogado', usuarioLogado)
-
+    
+    if (usuarioLogado === -1 || !listaUsuarios[usuarioLogado]) {
+        return response.status(400).json ({
+            sucesso: false,
+            mensagem: 'Quer editar um post? Faça login!'
+        })
+    }
+    
     const recadoIndex = listaUsuarios[usuarioLogado].recados.findIndex(r => r.id == request.params.id)
-    console.log('recadoIndex', request.params.id, recadoIndex)
-  
+    
     if (recadoIndex == -1){
             return response.status(400).json('Ops, nenhum recado encontrado encontrado.')
     } else {
@@ -173,6 +180,14 @@ app.put('/recados/:id', (request, response) => {
 
 app.delete('/recados/:id', (request, response) => {
     const usuarioLogado = listaUsuarios.findIndex(user => user.logado === true)
+    
+    if (usuarioLogado === -1 || !listaUsuarios[usuarioLogado]) {
+        return response.status(400).json ({
+            sucesso: false,
+            mensagem: 'Quer deletar um post? Faça login!'
+        })
+    }
+    
     const recadoIndex = listaUsuarios[usuarioLogado].recados.findIndex(r => r.id == request.params.id)
 
     if(recadoIndex < 0) {
