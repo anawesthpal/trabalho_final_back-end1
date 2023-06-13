@@ -1,4 +1,4 @@
-import express, { request, response } from 'express'
+import express from 'express'
 const app = express();
 app.use(express.json());
 
@@ -13,23 +13,14 @@ const listaUsuarios = []
 
 app.post('/usuarios', (request, response) => {
     const dados = request.body
-
-const novoUsuario = {
-        id: new Date().getTime(),
-        nome: dados.nome,
-        email: dados.email,
-        senha: dados.senha,
-        logado: false,
-        recados: []
-    }
-
+    
     if (!dados.nome){
         return response.status(400).json('Hey, o nome é obrigatório!')
     }
     if (!dados.email){
         return response.status(400).json('Hey, o e-mail também é obrigatório!')
     }
-   if (!dados.email || !dados.email.includes('@') || !dados.email.includes('.com')){
+    if (!dados.email || !dados.email.includes('@') || !dados.email.includes('.com')){
         return response.status(400).json({
             sucesso: false,
             dado: null,
@@ -48,7 +39,16 @@ const novoUsuario = {
             mensagem: 'Ops, usuário já cadastrado!'
         })
     }
-
+    
+    const novoUsuario = {
+            id: new Date().getTime(),
+            nome: dados.nome,
+            email: dados.email,
+            senha: dados.senha,
+            logado: false,
+            recados: []
+        }
+    
     listaUsuarios.push(novoUsuario)
 
     return response.status(201).json({
@@ -63,13 +63,12 @@ const novoUsuario = {
 app.post('/login', (request, response) =>{
     const dadosdoUsuario = request.body
 
-    const emailCorreto = listaUsuarios.some((user) => user.email === dadosdoUsuario.email)
-    const senhaCorreta = listaUsuarios.some((user) => user.senha === dadosdoUsuario.senha)
-
-    if(!emailCorreto || !senhaCorreta) {
+    const usuarioEncontrado = listaUsuarios.find((user) => user.email === dadosdoUsuario.email && user.senha === dadosdoUsuario.senha)
+    
+    if(!usuarioEncontrado) {
         return response.status(400).json({
             sucesso: false,
-            mensagem: 'Não encontramos o seu cadastro. Volte um casa!!' 
+            mensagem: 'Não encontramos o seu cadastro ou e-mail e senha incorretos. Volte um casa!!' 
         })
     }
 
@@ -80,11 +79,14 @@ app.post('/login', (request, response) =>{
         })
     }
 
-    listaUsuarios.forEach(usuario => usuario.logado = false)
+    listaUsuarios.forEach(usuario => {
+        if(usuario.email !== usuarioEncontrado.email) {
+            usuario.logado = false
+        }  else {
 
-    const user = listaUsuarios.find((user) => user.email === dadosdoUsuario.email)
-
-    user.logado = true
+        usuario.logado = true
+        }
+    })
 
     return response.status(200).json({
         sucesso: true,
